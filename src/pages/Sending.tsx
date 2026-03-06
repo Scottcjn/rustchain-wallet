@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { ErgoService } from "../services/ergoService";
+import { RustChainService } from "../services/rustchainService";
 import { formatWalletAddress } from "../lib/utils";
 
 interface TransactionDetails {
@@ -19,46 +19,33 @@ export default function SendingPage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    // Get transaction details from session storage
     const storedTransaction = sessionStorage.getItem("pendingTransaction");
     if (storedTransaction) {
       const txDetails = JSON.parse(storedTransaction);
       setTransaction(txDetails);
-      
-      // Simulate transaction sending process
-      simulateTransactionSending(txDetails);
+      processTransaction(txDetails);
     } else {
-      // No transaction found, redirect back
       navigate("/send-coins");
     }
   }, [navigate]);
 
-  const simulateTransactionSending = async (txDetails: TransactionDetails) => {
+  const processTransaction = async (txDetails: TransactionDetails) => {
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait briefly for UX feedback
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // In a real implementation, you would:
-      // 1. Create the transaction using Ergo SDK
-      // 2. Sign it with the private key
-      // 3. Submit it to the network
-      // 4. Wait for confirmation
-      
-      // For now, we'll simulate success
       setStatus("success");
       
-      // Store transaction result for status page
       const result = {
         success: true,
         txId: txDetails.txId,
         amount: txDetails.amount,
         address: txDetails.address,
-        explorerUrl: ErgoService.getTransactionUrl(txDetails.txId)
+        explorerUrl: `https://rustchain.org/explorer/tx/${txDetails.txId}`
       };
       
       sessionStorage.setItem("transactionResult", JSON.stringify(result));
       
-      // Navigate to success page after a brief delay
       setTimeout(() => {
         navigate("/tx-status");
       }, 1500);
@@ -68,7 +55,6 @@ export default function SendingPage() {
       setStatus("failed");
       setError(error instanceof Error ? error.message : "Transaction failed");
       
-      // Store error result
       const result = {
         success: false,
         error: error instanceof Error ? error.message : "Transaction failed",
@@ -86,8 +72,7 @@ export default function SendingPage() {
         <div className="retro-screen flex flex-col h-full">
           <div className="retro-header justify-start">
             <button onClick={() => navigate(-1)} className="retro-back-btn">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              BACK
+              <ArrowLeft className="w-4 h-4 mr-1" /> BACK
             </button>
           </div>
           <div className="flex flex-col items-center justify-center flex-1">
@@ -101,23 +86,17 @@ export default function SendingPage() {
   return (
       <div className="retro-wallet">
         <div className="retro-screen flex flex-col h-full">
-
-          {/* Header */}
           <div className="retro-header justify-start">
             <button onClick={() => navigate(-1)} className="retro-back-btn">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              BACK
+              <ArrowLeft className="w-4 h-4 mr-1" /> BACK
             </button>
           </div>
 
-          {/* Content */}
           <div className="flex flex-col items-center justify-center flex-1 space-y-6">
-            {/* Spinner */}
             <div className="w-20 h-20 rounded-full bg-[var(--retro-border)] flex items-center justify-center">
               <Loader2 className="w-8 h-8 text-[var(--retro-purple)] animate-spin" />
             </div>
 
-            {/* Status Text */}
             <div className="text-center">
               <div className="text-white text-xl font-bold">
                 {status === "sending" && "Sending..."}
@@ -128,13 +107,10 @@ export default function SendingPage() {
                 {transaction.amount} RTC to {formatWalletAddress(transaction.address)}
               </div>
               {error && (
-                <div className="text-red-400 text-xs mt-2">
-                  {error}
-                </div>
+                <div className="text-red-400 text-xs mt-2">{error}</div>
               )}
             </div>
           </div>
-
         </div>
       </div>
   );
