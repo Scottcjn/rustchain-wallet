@@ -17,12 +17,10 @@ export default function ConfirmTransaction() {
   const [transaction, setTransaction] = useState<TransactionDetails | null>(null);
 
   useEffect(() => {
-    // Get transaction details from session storage
     const storedTransaction = sessionStorage.getItem("pendingTransaction");
     if (storedTransaction) {
       setTransaction(JSON.parse(storedTransaction));
     } else {
-      // No transaction found, redirect back
       navigate("/send-coins");
     }
   }, [navigate]);
@@ -34,7 +32,6 @@ export default function ConfirmTransaction() {
   };
 
   const handleCancel = () => {
-    // Clear the stored transaction
     sessionStorage.removeItem("pendingTransaction");
     navigate("/send-coins");
   };
@@ -45,8 +42,7 @@ export default function ConfirmTransaction() {
         <div className="retro-screen">
           <div className="retro-header justify-start">
             <button onClick={() => navigate(-1)} className="retro-back-btn">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              BACK
+              <ArrowLeft className="w-4 h-4 mr-1" /> BACK
             </button>
           </div>
           <div className="flex flex-col items-center justify-center space-y-6 py-8">
@@ -60,15 +56,12 @@ export default function ConfirmTransaction() {
   return (
       <div className="retro-wallet relative">
         <div className="retro-screen">
-          {/* Header */}
           <div className="retro-header justify-start">
             <button onClick={() => navigate(-1)} className="retro-back-btn">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              BACK
+              <ArrowLeft className="w-4 h-4 mr-1" /> BACK
             </button>
           </div>
 
-          {/* Confirmation */}
           <div className="flex flex-col items-center space-y-6 py-8">
             <div className="w-14 h-14 bg-[var(--retro-border)] rounded-full flex items-center justify-center">
               <Send className="w-6 h-6 text-white" />
@@ -79,7 +72,6 @@ export default function ConfirmTransaction() {
               {transaction.memo || "No memo"}
             </div>
 
-            {/* Details */}
             <div className="w-full bg-[var(--retro-panel)] text-sm rounded-md border border-[var(--retro-border)]">
               <div className="flex justify-between p-3 border-b border-[var(--retro-border)]">
                 <span className="text-[var(--retro-gray)]">To</span>
@@ -87,15 +79,14 @@ export default function ConfirmTransaction() {
               </div>
               <div className="flex justify-between p-3 border-b border-[var(--retro-border)]">
                 <span className="text-[var(--retro-gray)]">Network</span>
-                <span className="text-white font-bold">Ergo Mainnet</span>
+                <span className="text-white font-bold">RustChain Mainnet</span>
               </div>
               <div className="flex justify-between p-3">
                 <span className="text-[var(--retro-gray)]">Network fee</span>
-                <span className="text-white font-bold">~0.001 ERG</span>
+                <span className="text-white font-bold">0 RTC (free)</span>
               </div>
             </div>
 
-            {/* Actions */}
             <div className="absolute bottom-6 w-full flex justify-between max-w-xs pt-1">
               <Button className="retro-btn retro-btn-secondary w-[48%] text-[12px]" onClick={handleCancel}>
                 Cancel
