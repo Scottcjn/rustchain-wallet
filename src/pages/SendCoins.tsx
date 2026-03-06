@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import useWallet from "../hooks/useWallet";
-import { ErgoService } from "../services/ergoService";
+import { RustChainService } from "../services/rustchainService";
 
 export default function SendCoins() {
   const navigate = useNavigate();
@@ -25,8 +25,8 @@ export default function SendCoins() {
       return false;
     }
 
-    if (!ErgoService.isValidAddress(sendForm.address.trim())) {
-      setError("Invalid Ergo address format");
+    if (!RustChainService.isValidAddress(sendForm.address.trim())) {
+      setError("Invalid RTC address format. Must start with 'RTC' followed by 40 hex characters, or be a valid wallet name.");
       return false;
     }
 
@@ -45,10 +45,7 @@ export default function SendCoins() {
   };
 
   const handleSend = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     if (!address || !privKey) {
       setError("Wallet not properly initialized");
       return;
@@ -60,8 +57,7 @@ export default function SendCoins() {
     try {
       const amount = parseFloat(sendForm.amount);
       
-      // Send transaction using ErgoService
-      const txId = await ErgoService.sendTransaction(
+      const txId = await RustChainService.sendSignedTransfer(
         address,
         sendForm.address.trim(),
         amount,
@@ -69,7 +65,6 @@ export default function SendCoins() {
         sendForm.memo.trim()
       );
 
-      // Store transaction details for confirmation page
       const transactionDetails = {
         txId,
         amount: sendForm.amount,
@@ -78,13 +73,8 @@ export default function SendCoins() {
         timestamp: new Date().toISOString()
       };
 
-      // Store in session storage for the confirmation flow
       sessionStorage.setItem("pendingTransaction", JSON.stringify(transactionDetails));
-
-      // Reset form
       setSendForm({ address: "", amount: "", memo: "" });
-      
-      // Navigate to confirmation
       navigate("/confirm-tx");
     } catch (error) {
       console.error("Transaction failed:", error);
@@ -99,10 +89,9 @@ export default function SendCoins() {
         <div className="retro-screen">
           <div className="retro-header">
             <button onClick={() => navigate("/dashboard")} className="retro-back-btn">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              BACK
+              <ArrowLeft className="w-4 h-4 mr-1" /> BACK
             </button>
-            <span className="retro-title">SEND COINS</span>
+            <span className="retro-title">SEND RTC</span>
           </div>
 
           <div className="retro-panel">
@@ -115,51 +104,29 @@ export default function SendCoins() {
 
               <div>
                 <label className="retro-label-bold">RECIPIENT ADDRESS</label>
-                <Input
-                  value={sendForm.address}
-                  onChange={(e) => {
-                    setSendForm((prev) => ({ ...prev, address: e.target.value }));
-                    setError(""); // Clear error when user types
-                  }}
-                  placeholder="9fMM6ewgUmT994JuZp6m5aRn3LjjNvcPgcVywipWcz7iP4LzBFC"
-                  className="retro-input"
-                  disabled={isLoading}
-                />
+                <Input value={sendForm.address}
+                  onChange={(e) => { setSendForm((prev) => ({ ...prev, address: e.target.value })); setError(""); }}
+                  placeholder="RTCa1b2c3d4e5f6... or wallet-name"
+                  className="retro-input" disabled={isLoading} />
               </div>
 
               <div>
                 <label className="retro-label-bold">AMOUNT (RTC)</label>
-                <Input
-                  type="number"
-                  value={sendForm.amount}
-                  onChange={(e) => {
-                    setSendForm((prev) => ({ ...prev, amount: e.target.value }));
-                    setError(""); // Clear error when user types
-                  }}
-                  placeholder="0.00"
-                  className="retro-input"
-                  disabled={isLoading}
-                  step="0.01"
-                  min="0"
-                />
+                <Input type="number" value={sendForm.amount}
+                  onChange={(e) => { setSendForm((prev) => ({ ...prev, amount: e.target.value })); setError(""); }}
+                  placeholder="0.00" className="retro-input" disabled={isLoading} step="0.01" min="0" />
               </div>
 
               <div>
                 <label className="retro-label-bold">MEMO (OPTIONAL)</label>
-                <Input
-                  value={sendForm.memo}
+                <Input value={sendForm.memo}
                   onChange={(e) => setSendForm((prev) => ({ ...prev, memo: e.target.value }))}
-                  placeholder="Transaction note..."
-                  className="retro-input"
-                  disabled={isLoading}
-                />
+                  placeholder="Transaction note..." className="retro-input" disabled={isLoading} />
               </div>
 
-              <Button
-                onClick={handleSend}
+              <Button onClick={handleSend}
                 disabled={!sendForm.address || !sendForm.amount || isLoading}
-                className="retro-btn retro-btn-primary w-full"
-              >
+                className="retro-btn retro-btn-primary w-full">
                 {isLoading ? "SENDING..." : "SEND TRANSACTION"}
               </Button>
             </div>
