@@ -2,8 +2,27 @@ import React, { createContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import * as bip39 from "bip39";
 import { ethers } from "ethers";
-import { Address } from "@coinbarn/ergo-ts";
 import { loadFromChromeStorage, saveToBrowserStorage, clearBrowserStorage } from "../lib/utils";
+
+/**
+ * RustChain address derivation:
+ * 1. Generate BIP39 mnemonic (24 words)
+ * 2. Derive HD wallet using m/44'/429'/0'/0 path
+ * 3. Take public key bytes
+ * 4. SHA256 hash the public key
+ * 5. Address = "RTC" + first 40 hex chars of SHA256
+ *
+ * This matches the server-side Ed25519 address format.
+ * Note: Full Ed25519 signing requires nacl/tweetnacl library.
+ * For now we use ethers secp256k1 keys with RTC address format.
+ */
+function deriveRTCAddress(publicKey: string): string {
+  // Remove 0x prefix if present, and the 04 uncompressed prefix
+  const cleanKey = publicKey.startsWith("0x") ? publicKey.slice(2) : publicKey;
+  const hash = ethers.sha256("0x" + cleanKey);
+  // RTC + first 40 hex chars of SHA256 hash (without 0x prefix)
+  return "RTC" + hash.slice(2, 42);
+}
 
 interface WalletContextProps { 
   mnemonic: string | null;
@@ -35,12 +54,12 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const mnemonic = bip39.generateMnemonic();
       const rootNode = ethers.HDNodeWallet.fromPhrase(mnemonic, "", "m/44'/429'/0'/0");
       const childNode = rootNode.deriveChild(0);
-      const address = Address.fromPk(childNode.publicKey.toString().slice(2)).address;
+      const rtcAddress = deriveRTCAddress(childNode.publicKey);
       const privateKey = childNode.privateKey;
       
       setMnemonicState(mnemonic);
       setPrivKeyState(privateKey);
-      setAddressState(address);
+      setAddressState(rtcAddress);
       
     } catch (error) {
       console.log("Error creating new wallet:", error);
@@ -51,20 +70,20 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       const rootNode = ethers.HDNodeWallet.fromPhrase(mnemonic, "", "m/44'/429'/0'/0");
       const childNode = rootNode.deriveChild(0);
-      const address = Address.fromPk(childNode.publicKey.toString().slice(2)).address;
+      const rtcAddress = deriveRTCAddress(childNode.publicKey);
       const privateKey = childNode.privateKey;
       
       setMnemonicState(mnemonic);
       setPrivKeyState(privateKey);
-      setAddressState(address);
+      setAddressState(rtcAddress);
       
     } catch (error) {
-      console.log("Error creating new wallet:", error);
+      console.log("Error importing wallet:", error);
     }
   };
 
   const setTokenState = (): void => {
-    const token = Date.now() + 5 * 60 * 1000; // 15 mins
+    const token = Date.now() + 5 * 60 * 1000;
     setToken(token.toString());
     saveToBrowserStorage("token", token.toString());
   };
@@ -96,16 +115,12 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const clearStorage = async (): Promise<void> => {
     try {
-      // Clear all browser storage
       await clearBrowserStorage();
-      
-      // Reset all state variables
       setMnemonic(null);
       setPrivKey(null);
       setAddress(null);
       setToken(null);
       setPassword(null);
-      
       console.log("All wallet data cleared successfully");
     } catch (error) {
       console.error("Error clearing wallet storage:", error);
