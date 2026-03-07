@@ -1,0 +1,28 @@
+[package]
+name = "rustchain-wallet"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rustchain-wallet"
+path = "src/main.rs"
+
+[dependencies]
+ed25519-dalek = { version = "2.0", features = ["rand_core"] }
+bip39 = "2"
+sha2 = "0.10"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+aes-gcm = "0.10"
+rand = "0.8"
+base64 = "0.22"
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+dirs = "5"
+
+[profile.release]
+opt-level = 3
+lto = true
